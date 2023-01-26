@@ -87,13 +87,12 @@ router.post("/", async function (req, res, next) {
 });
 
 
-//update an invoice
-
+//update payment on an invoice
 router.put("/:id", async function (req, res, next) {
     try {
         let { amt, paid } = req.body;
         let id = req.params.id;
-        let paidDate = null;
+        let paymentDate = null;
 
         const currInvoice = await db.query(
             `SELECT paid

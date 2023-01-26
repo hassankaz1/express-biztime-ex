@@ -9,9 +9,9 @@ const companies = require("./routes/companies");
 const invoices = require("./routes/invoices");
 
 const app = express();
-
-
 app.use(express.json());
+
+// app.use(express.json());
 app.use("/companies", companies);
 app.use("/invoices", invoices);
 

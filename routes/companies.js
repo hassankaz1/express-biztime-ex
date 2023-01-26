@@ -1,6 +1,7 @@
 
 const express = require("express");
 const ExpressError = require("../expressError")
+const slugify = require("slugify");
 const db = require("../db");
 
 let router = new express.Router();
@@ -9,7 +10,7 @@ let router = new express.Router();
 router.get("/", async function (req, res, next) {
     try {
         const result = await db.query(
-            "SELECT * FROM companies"
+            "SELECT code, name FROM companies"
         );
 
         return res.json({ "companies": result.rows });
@@ -20,10 +21,49 @@ router.get("/", async function (req, res, next) {
     }
 });
 
-//create a new companie
+//get detail on specific company by code# (invoices of company)
+
+router.get("/:code", async function (req, res, next) {
+    try {
+        let code = req.params.code;
+
+        const comp = await db.query(
+            `SELECT code, name, description
+             FROM companies
+             WHERE code = $1`,
+            [code]
+        );
+
+        const compInvoices = await db.query(
+            `SELECT id
+             FROM invoices
+             WHERE comp_code = $1`,
+            [code]
+        );
+
+        if (comp.rows.length === 0) {
+            throw new ExpressError(`No such company: ${code}`, 404)
+        }
+
+        const companyOut = comp.rows[0];
+        const invoices = compInvoices.rows;
+
+        companyOut.invoices = invoices.map(inv => inv.id);
+
+        return res.json({ "company": companyOut });
+    }
+
+    catch (err) {
+        return next(err);
+    }
+});
+
+
+//create a new company, create code using slugify
 router.post("/", async function (req, res, next) {
     try {
-        let { code, name, description } = req.body;
+        let { name, description } = req.body;
+        let code = slugify(name);
 
         const result = await db.query(
             `INSERT INTO companies (code, name, description) 
@@ -40,10 +80,13 @@ router.post("/", async function (req, res, next) {
 });
 
 //edit a current company
-router.post("/:code", async function (req, res, next) {
+router.put("/:code", async function (req, res, next) {
     try {
-        let code = req.params.code
+        console.log("new put");
+
+        console.log(req.body);
         let { name, description } = req.body;
+        let code = req.params.code;
 
 
 
